@@ -6,7 +6,7 @@ This GitHub Action allows you to create [Check Runs](https://developer.github.co
 
 The following shows how to publish a Check Run which will have the same status as your job and contains the output of another action. This will be shown predominantly in a Pull Request or on the workflow run.
 
-```
+```yaml
 name: "build-test"
 on: [push]
 
@@ -17,17 +17,54 @@ jobs:
     - uses: actions/checkout@v1
     - uses: actions/create-outputs@v0.0.0-fake
       id: test
-    - uses: LouisBrunner/checks-action@v1.1.1
+    - uses: LouisBrunner/checks-action@v2.0.0
       if: always()
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         name: Test XYZ
         conclusion: ${{ job.status }}
         output: |
-          {"summary":${{ steps.test.outputs.summary }}}
+          {"summary":"${{ steps.test.outputs.summary }}"}
 ```
 
 See the [examples workflow](.github/workflows/examples.yml) for more details and examples (and see the [associated runs](https://github.com/LouisBrunner/checks-action/actions?query=workflow%3Aexamples) to see how it will look like).
+
+### Permissions
+
+When the action is run as part of a Pull Request, your workflow might fail with the following error: `Error: Resource not accessible by integration`.
+
+You can solve this in multiple ways:
+
+* Increase the permissions given to `GITHUB_TOKEN` (see https://github.com/actions/first-interaction/issues/10#issuecomment-1232740076), please note that you should understand the security implications of this change
+* Use a Github App token instead of a `GITHUB_TOKEN` (see https://github.com/LouisBrunner/checks-action/issues/26#issuecomment-1232948025)
+
+Most of the time, it means setting up your workflow this way:
+
+```yaml
+name: "build-test"
+on: [push]
+
+jobs:
+  test_something:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/create-outputs@v0.0.0-fake
+      id: test
+    - uses: LouisBrunner/checks-action@v2.0.0
+      if: always()
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        name: Test XYZ
+        conclusion: ${{ job.status }}
+        output: |
+          {"summary":"${{ steps.test.outputs.summary }}"}
+```
+
+Notice the extra `permissions` section.
 
 ## Inputs
 
@@ -53,7 +90,7 @@ _Optional_ The SHA of the target commit. Defaults to the current commit.
 
 ### `conclusion`
 
-_Optional_ (**Required** if `status` is `completed`, the default) The conclusion of your check, can be either `success`, `failure`, `neutral`, `cancelled`, `timed_out` or `action_required`
+_Optional_ (**Required** if `status` is `completed`, the default) The conclusion of your check, can be either `success`, `failure`, `neutral`, `cancelled`, `timed_out`, `action_required` or `skipped`
 
 ### `status`
 
@@ -79,6 +116,7 @@ _Optional_ A JSON object (as a string) containing the output of your check, requ
 
 Supports the following properties:
 
+ - `title`: _Optional_, title of your check, defaults to `name`
  - `summary`: **Required**, summary of your check
  - `text_description`: _Optional_, a text description of your annotation (if any)
 

@@ -1,4 +1,4 @@
-import {RestEndpointMethodTypes} from '@octokit/rest';
+import {Actions, Annotations, Images} from './GitHub';
 
 interface ArgsBase {
   repo?: string;
@@ -26,22 +26,8 @@ export interface ArgsUpdate extends ArgsBase {
 
 export type Args = ArgsCreate | ArgsUpdate;
 
-// @octokit/rest > Endpoints.d.ts > ChecksCreateParamsOutputAnnotations[]
-export type Annotations = NonNullable<
-  NonNullable<RestEndpointMethodTypes['checks']['create']['parameters']['output']>['annotations']
->;
-
-// @octokit/rest > Endpoints.d.ts > ChecksCreateParamsOutputImages[]
-export type Images = NonNullable<
-  NonNullable<RestEndpointMethodTypes['checks']['create']['parameters']['output']>['images']
->;
-
-// @octokit/rest > Endpoints.d.ts > ChecksCreateParamsActions[]
-export type Actions = NonNullable<
-  RestEndpointMethodTypes['checks']['create']['parameters']['actions']
->;
-
 export type Output = {
+  title?: string;
   summary: string;
   text_description?: string;
 };
@@ -53,6 +39,7 @@ export enum Conclusion {
   Cancelled = 'cancelled',
   TimedOut = 'timed_out',
   ActionRequired = 'action_required',
+  Skipped = 'skipped',
 }
 
 export enum Status {
